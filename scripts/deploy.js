@@ -1,28 +1,25 @@
 const hre = require("hardhat");
 
 async function main() {
+  // Deploy the CompetitionFactory contract
+  const CompetitionFactory = await hre.ethers.getContractFactory("CompetitionFactory");
+  const competitionFactory = await CompetitionFactory.deploy();
+  await competitionFactory.deployed();
 
-    // ethers is avaialble in the global scope
-    const [deployer] = await hre.ethers.getSigners();
-    console.log(
-      "Deploying the contracts with the account:",
-      await deployer.getAddress()
-    );
+  console.log("CompetitionFactory deployed to:", competitionFactory.address);
   
-    console.log("Account balance:", (await deployer.getBalance()).toString());
+  // // Create an initial competition
+  // const transaction = await competitionFactory.createCompetition();
+  // await transaction.wait();
   
-    const Token = await hre.ethers.getContractFactory("Turing");
-    const token = await Token.deploy();
-    await token.deployed();
-  
-    console.log("Token address:", token.address);
-  
-  }
-  
-  main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error(error);
-      process.exit(1);
-    });
-  
+  // Get the address of the created competition
+  const competitions = await competitionFactory.getCompetitions();
+  console.log("Initial competition created at:", competitions[0]);
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

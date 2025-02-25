@@ -1,0 +1,77 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/lmscaramussa/Documents/proof-of-step/contracts/CompetitionFactory.sol": {
+      "lastModificationDate": 1740514375946,
+      "contentHash": "d783c89c24dd6c1b8a830b63eb1261aa",
+      "sourceName": "contracts/CompetitionFactory.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./StepCompetition.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "CompetitionFactory"
+      ]
+    },
+    "/home/lmscaramussa/Documents/proof-of-step/contracts/StepCompetition.sol": {
+      "lastModificationDate": 1740517178298,
+      "contentHash": "83f4caf9a165e61b4e90c5fa1a2c38ae",
+      "sourceName": "contracts/StepCompetition.sol",
+      "solcConfig": {
+        "version": "0.8.4",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "StepCompetition"
+      ]
+    }
+  }
+}
