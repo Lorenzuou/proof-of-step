@@ -7,14 +7,6 @@ async function main() {
   await competitionFactory.deployed();
 
   console.log("CompetitionFactory deployed to:", competitionFactory.address);
-  
-  // // Create an initial competition
-  // const transaction = await competitionFactory.createCompetition();
-  // await transaction.wait();
-  
-  // Get the address of the created competition
-  const competitions = await competitionFactory.getCompetitions();
-  console.log("Initial competition created at:", competitions[0]);
 }
 
 main()

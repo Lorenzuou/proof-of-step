@@ -1,8 +1,8 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/home/lmscaramussa/Documents/proof-of-step/contracts/CompetitionFactory.sol": {
-      "lastModificationDate": 1740514375946,
+    "/home/lorenzo/Desktop/ufes/proof-of-step/contracts/CompetitionFactory.sol": {
+      "lastModificationDate": 1740404705015,
       "contentHash": "d783c89c24dd6c1b8a830b63eb1261aa",
       "sourceName": "contracts/CompetitionFactory.sol",
       "solcConfig": {
@@ -38,8 +38,8 @@
         "CompetitionFactory"
       ]
     },
-    "/home/lmscaramussa/Documents/proof-of-step/contracts/StepCompetition.sol": {
-      "lastModificationDate": 1740517178298,
+    "/home/lorenzo/Desktop/ufes/proof-of-step/contracts/StepCompetition.sol": {
+      "lastModificationDate": 1740765520252,
       "contentHash": "83f4caf9a165e61b4e90c5fa1a2c38ae",
       "sourceName": "contracts/StepCompetition.sol",
       "solcConfig": {

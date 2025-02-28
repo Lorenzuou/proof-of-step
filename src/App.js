@@ -50,6 +50,9 @@ function App() {
           
           // Get competitions last
           await getCompetitions(factoryContract);
+        } else {
+          console.error("MetaMask not detected!");
+          alert("Please install MetaMask to use this DApp");
         }
       } catch (error) {
         console.error("Error initializing application:", error);
@@ -75,7 +78,7 @@ function App() {
         const onParticipantRegistered = (user) => {
           console.log(`User ${user} registered for the competition`);
           checkIfUserRegistered(); // Check if current user is registered
-          fetchRanking(); // Update ranking when new participant joins
+          fetchRanking(); // Update ranking wWhen new participant joins
         };
 
         // Set up event listeners
@@ -101,24 +104,38 @@ function App() {
       setCompetitions(competitions);
       
       if (competitions.length > 0) {
+        // Only select a competition if there's at least one
         selectCompetition(competitions[0]);
+      } else {
+        // Clear competition-related state when there are no competitions
+        setSelectedCompetition(null);
+        setCompetitionContract(null);
+        setIsRegistered(false);
+        setRanking([]);
       }
     } catch (error) {
       console.error("Error fetching competitions:", error);
+      // Ensure we reset state on error
+      setCompetitions([]);
+      setSelectedCompetition(null);
+      setCompetitionContract(null);
     }
   };
 
   // Create a new competition
   const createCompetition = async () => {
     try {
-      console.log("COMPETION BEING CREATED")
+      console.log("Competition being created...");
       setLoading(true);
       const tx = await factoryContract.createCompetition();
+      console.log("Transaction sent:", tx.hash);
       await tx.wait();
+      console.log("Competition created successfully");
       await getCompetitions(factoryContract);
-      setLoading(false);
     } catch (error) {
       console.error("Error creating competition:", error);
+      alert("Failed to create competition. Check console for details.");
+    } finally {
       setLoading(false);
     }
   };
@@ -126,6 +143,8 @@ function App() {
   // Select a competition to interact with
   const selectCompetition = async (address) => {
     try {
+      if (!address) return;
+      
       const competitionContract = new ethers.Contract(
         address,
         StepCompetitionABI.abi,
@@ -135,10 +154,15 @@ function App() {
       setSelectedCompetition(address);
       setCompetitionContract(competitionContract);
       
-      await checkIfUserRegistered(competitionContract);
-      await fetchRanking(competitionContract);
+      // Only check registration and fetch ranking if we have a valid user address
+      if (userAddress) {
+        await checkIfUserRegistered(competitionContract);
+        await fetchRanking(competitionContract);
+      }
     } catch (error) {
       console.error("Error selecting competition:", error);
+      setSelectedCompetition(null);
+      setCompetitionContract(null);
     }
   };
 
@@ -205,6 +229,7 @@ function App() {
       }
     } catch (error) {
       console.error("Error fetching ranking:", error);
+      setRanking([]);
     }
   };
 
@@ -249,7 +274,9 @@ function App() {
           <div className="competitions-section">
             <h2>Competições</h2>
             <div className="competition-controls">
-              <button onClick={createCompetition} className="create-btn">Criar Nova Competição</button>
+              <button onClick={createCompetition} className="create-btn" disabled={loading}>
+                {loading ? "Criando..." : "Criar Nova Competição"}
+              </button>
             </div>
             
             <div className="competition-list">
@@ -273,7 +300,7 @@ function App() {
             </div>
           </div>
           
-          {selectedCompetition && (
+          {selectedCompetition ? (
             <div className="competition-details">
               <h2>Detalhes da Competição</h2>
               <p><strong>Endereço do Contrato:</strong> {selectedCompetition}</p>
@@ -281,7 +308,9 @@ function App() {
               {!isRegistered ? (
                 <div className="registration-section">
                   <p>Você ainda não está registrado nesta competição</p>
-                  <button onClick={register} className="register-btn">Registrar-se</button>
+                  <button onClick={register} className="register-btn" disabled={loading}>
+                    {loading ? "Registrando..." : "Registrar-se"}
+                  </button>
                 </div>
               ) : (
                 <div className="steps-section">
@@ -293,8 +322,11 @@ function App() {
                       value={steps} 
                       onChange={(e) => setSteps(parseInt(e.target.value) || 0)} 
                       placeholder="Número de passos"
+                      disabled={loading}
                     />
-                    <button onClick={registerSteps}>Registrar</button>
+                    <button onClick={registerSteps} disabled={loading || steps <= 0}>
+                      {loading ? "Registrando..." : "Registrar"}
+                    </button>
                   </div>
                 </div>
               )}
@@ -329,6 +361,14 @@ function App() {
                   </table>
                 )}
               </div>
+            </div>
+          ) : competitions.length > 0 ? (
+            <div className="competition-details">
+              <p>Selecione uma competição para ver os detalhes</p>
+            </div>
+          ) : (
+            <div className="competition-details">
+              <p>Nenhuma competição disponível. Crie uma nova para começar!</p>
             </div>
           )}
         </div>
