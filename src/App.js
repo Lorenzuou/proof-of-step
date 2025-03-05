@@ -21,6 +21,10 @@ function App() {
   const [userAddress, setUserAddress] = useState("");
   const [loading, setLoading] = useState(true);
   const [ranking, setRanking] = useState([]);
+  const [userName, setUserName] = useState("");
+  const [selectedCompetitionName, setSelectedCompetitionName] = useState("");
+  const [newCompetitionName, setNewCompetitionName] = useState("");
+  const [newProfileName, setNewProfileName] = useState("");
 
   // Connect to MetaMask and contracts
   useEffect(() => {
@@ -100,15 +104,21 @@ function App() {
   // Get all competitions
   const getCompetitions = async (contract) => {
     try {
-      const competitions = await contract.getCompetitions();
-      setCompetitions(competitions);
+      const competitionsInfo = await contract.getCompetitions();
+      // Map competitions info to include address and name
+      const competitionsWithNames = competitionsInfo.map(comp => ({
+        address: comp.competitionAddress,
+        name: comp.name
+      }));
+      setCompetitions(competitionsWithNames);
       
-      if (competitions.length > 0) {
+      if (competitionsWithNames.length > 0) {
         // Only select a competition if there's at least one
-        selectCompetition(competitions[0]);
+        selectCompetition(competitionsWithNames[0].address);
       } else {
         // Clear competition-related state when there are no competitions
         setSelectedCompetition(null);
+        setSelectedCompetitionName("");
         setCompetitionContract(null);
         setIsRegistered(false);
         setRanking([]);
@@ -118,6 +128,53 @@ function App() {
       // Ensure we reset state on error
       setCompetitions([]);
       setSelectedCompetition(null);
+      setSelectedCompetitionName("");
+      setCompetitionContract(null);
+    }
+  };
+  const fetchCompetitions = async () => {
+    try {
+      // Make sure factoryContract is available
+      if (!factoryContract) {
+        console.log("Factory contract not initialized");
+        return;
+      }
+  
+      console.log("Fetching competitions...");
+      
+      // Get competitions from the factory contract
+      const allCompetitions = await factoryContract.getCompetitions();
+      
+      // Format the competitions data
+      const competitionsWithNames = allCompetitions.map(comp => {
+        return {
+          address: comp.competitionAddress,
+          name: comp.name
+        };
+      });
+      
+      console.log("Competitions fetched:", competitionsWithNames);
+      
+      // Update state with the fetched competitions
+      setCompetitions(competitionsWithNames);
+      
+      // If there are competitions, select the first one by default
+      if (competitionsWithNames.length > 0) {
+        selectCompetition(competitionsWithNames[0].address);
+      } else {
+        // Clear competition-related state when there are no competitions
+        setSelectedCompetition(null);
+        setSelectedCompetitionName("");
+        setCompetitionContract(null);
+        setIsRegistered(false);
+        setRanking([]);
+      }
+    } catch (error) {
+      console.error("Error fetching competitions:", error);
+      // Ensure we reset state on error
+      setCompetitions([]);
+      setSelectedCompetition(null);
+      setSelectedCompetitionName("");
       setCompetitionContract(null);
     }
   };
@@ -126,17 +183,33 @@ function App() {
   const createCompetition = async () => {
     try {
       console.log("Competition being created...");
-      setLoading(true);
-      const tx = await factoryContract.createCompetition();
-      console.log("Transaction sent:", tx.hash);
+      
+      // Check if factory contract is available
+      if (!factoryContract) {
+        console.error("Factory contract not initialized");
+        return;
+      }
+      
+      // Get competition name from state or input
+      const competitionName = newCompetitionName || "Unnamed Competition";
+      
+      // Call the factory contract's createCompetition method with the name
+      const tx = await factoryContract.createCompetition(competitionName);
+      
+      // Wait for transaction to be mined
       await tx.wait();
-      console.log("Competition created successfully");
-      await getCompetitions(factoryContract);
+      
+      console.log("Competition created successfully!");
+      
+      // Clear the input field
+      setNewCompetitionName("");
+      
+      // Refresh the competitions list
+      fetchCompetitions();
+      
     } catch (error) {
       console.error("Error creating competition:", error);
-      alert("Failed to create competition. Check console for details.");
-    } finally {
-      setLoading(false);
+      alert("Failed to create competition: " + error.message);
     }
   };
 
@@ -151,7 +224,11 @@ function App() {
         signer
       );
       
+      // Get competition name
+      const competitionName = await competitionContract.competitionName();
+      
       setSelectedCompetition(address);
+      setSelectedCompetitionName(competitionName);
       setCompetitionContract(competitionContract);
       
       // Only check registration and fetch ranking if we have a valid user address
@@ -162,6 +239,7 @@ function App() {
     } catch (error) {
       console.error("Error selecting competition:", error);
       setSelectedCompetition(null);
+      setSelectedCompetitionName("");
       setCompetitionContract(null);
     }
   };
@@ -172,6 +250,9 @@ function App() {
       if (contract && userAddress) {
         const participant = await contract.participants(userAddress);
         setIsRegistered(participant.registered);
+        if (participant.registered) {
+          setUserName(participant.name);
+        }
       }
     } catch (error) {
       console.error("Error checking registration status:", error);
@@ -182,12 +263,29 @@ function App() {
   const register = async () => {
     try {
       setLoading(true);
-      const tx = await competitionContract.register();
+      const tx = await competitionContract.register(newProfileName);
       await tx.wait();
       await checkIfUserRegistered();
+      setNewProfileName("");
       setLoading(false);
     } catch (error) {
       console.error("Error registering for competition:", error);
+      setLoading(false);
+    }
+  };
+
+  // Update profile name
+  const updateProfileName = async () => {
+    try {
+      setLoading(true);
+      const tx = await competitionContract.updateProfileName(newProfileName);
+      await tx.wait();
+      setUserName(newProfileName);
+      setNewProfileName("");
+      await fetchRanking();
+      setLoading(false);
+    } catch (error) {
+      console.error("Error updating profile name:", error);
       setLoading(false);
     }
   };
@@ -216,12 +314,13 @@ function App() {
   const fetchRanking = async (contract = competitionContract) => {
     try {
       if (contract && signer) { // Check that signer exists
-        const [addresses, steps] = await contract.getRanking();
+        const [addresses, steps, names] = await contract.getRanking();
         
-        // Create an array of objects with address and steps
+        // Create an array of objects with address, steps, and names
         const rankingData = addresses.map((address, index) => ({
           address: address,
           steps: steps[index].toString(),
+          name: names[index],
           position: index + 1
         }));
         
@@ -232,7 +331,6 @@ function App() {
       setRanking([]);
     }
   };
-
 
   // Listen for CompetitionCreated events from Factory
   useEffect(() => {
@@ -269,11 +367,19 @@ function App() {
         <div className="main-content">
           <div className="user-info">
             <p><strong>Seu endereço:</strong> {userAddress ? `${userAddress.substring(0, 6)}...${userAddress.substring(38)}` : "Não conectado"}</p>
+            {isRegistered && <p><strong>Seu nome:</strong> {userName || "Anonymous Stepper"}</p>}
           </div>
           
           <div className="competitions-section">
             <h2>Competições</h2>
             <div className="competition-controls">
+              <input 
+                type="text"
+                value={newCompetitionName}
+                onChange={(e) => setNewCompetitionName(e.target.value)}
+                placeholder="Nome da Competição"
+                className="competition-name-input"
+              />
               <button onClick={createCompetition} className="create-btn" disabled={loading}>
                 {loading ? "Criando..." : "Criar Nova Competição"}
               </button>
@@ -285,14 +391,14 @@ function App() {
                 <p>Nenhuma competição encontrada. Crie uma nova!</p>
               ) : (
                 <div className="competition-items">
-                  {competitions.map((address, index) => (
+                  {competitions.map((competition, index) => (
                     <div 
                       key={index} 
-                      className={`competition-item ${selectedCompetition === address ? 'selected' : ''}`}
-                      onClick={() => selectCompetition(address)}
+                      className={`competition-item ${selectedCompetition === competition.address ? 'selected' : ''}`}
+                      onClick={() => selectCompetition(competition.address)}
                     >
-                      <span>Competição #{index + 1}</span>
-                      <span className="competition-address">{address.substring(0, 6)}...{address.substring(38)}</span>
+                      <span>{competition.name || `Competição #${index + 1}`}</span>
+                      <span className="competition-address">{competition.address.substring(0, 6)}...{competition.address.substring(38)}</span>
                     </div>
                   ))}
                 </div>
@@ -302,12 +408,22 @@ function App() {
           
           {selectedCompetition ? (
             <div className="competition-details">
-              <h2>Detalhes da Competição</h2>
+              <h2>{selectedCompetitionName || "Detalhes da Competição"}</h2>
               <p><strong>Endereço do Contrato:</strong> {selectedCompetition}</p>
               
               {!isRegistered ? (
                 <div className="registration-section">
                   <p>Você ainda não está registrado nesta competição</p>
+                  <div className="name-input-container">
+                    <input 
+                      type="text" 
+                      value={newProfileName}
+                      onChange={(e) => setNewProfileName(e.target.value)}
+                      placeholder="Seu nome (opcional)"
+                      disabled={loading}
+                      className="name-input"
+                    />
+                  </div>
                   <button onClick={register} className="register-btn" disabled={loading}>
                     {loading ? "Registrando..." : "Registrar-se"}
                   </button>
@@ -328,6 +444,23 @@ function App() {
                       {loading ? "Registrando..." : "Registrar"}
                     </button>
                   </div>
+                  
+                  <div className="profile-update-section">
+                    <h4>Atualizar Perfil</h4>
+                    <div className="name-input-container">
+                      <input 
+                        type="text" 
+                        value={newProfileName}
+                        onChange={(e) => setNewProfileName(e.target.value)}
+                        placeholder="Novo nome"
+                        disabled={loading}
+                        className="name-input"
+                      />
+                      <button onClick={updateProfileName} disabled={loading || !newProfileName}>
+                        {loading ? "Atualizando..." : "Atualizar Nome"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
               
@@ -340,7 +473,8 @@ function App() {
                     <thead>
                       <tr>
                         <th>Posição</th>
-                        <th>Participante</th>
+                        <th>Nome</th>
+                        <th>Endereço</th>
                         <th>Passos</th>
                       </tr>
                     </thead>
@@ -348,6 +482,7 @@ function App() {
                       {ranking.map((item, index) => (
                         <tr key={index} className={item.address === userAddress ? 'current-user' : ''}>
                           <td>{item.position}</td>
+                          <td>{item.name || "Anonymous Stepper"}</td>
                           <td>
                             {item.address === userAddress ? 
                               'Você' : 
