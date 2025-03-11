@@ -86,6 +86,15 @@
   transition: all 0.2s;
 }
 
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+  border: 1px solid #ef9a9a;
+}
+
 .competition-item:hover {
   background-color: #e8f0fe;
 }

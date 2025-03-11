@@ -6,7 +6,7 @@ import StepCompetitionABI from './abis/StepCompetition.json';
 import './App.css';
 
 // Contract addresses (replace with your deployed contract address)
-const FACTORY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const FACTORY_ADDRESS = "0x47a221ffe6e04352208dF78937012f9A45f33837";
 
 function App() {
   const [provider, setProvider] = useState(null);
