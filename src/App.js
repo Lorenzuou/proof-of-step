@@ -432,14 +432,17 @@ function App() {
                 <div className="steps-section">
                   <h3>Registrar Passos</h3>
                   <div className="steps-input">
-                    <input 
-                      type="number" 
-                      min="1"
-                      value={steps} 
-                      onChange={(e) => setSteps(parseInt(e.target.value) || 0)} 
-                      placeholder="Número de passos"
-                      disabled={loading}
-                    />
+                  <input 
+                        type="number" 
+                        min="1"
+                        onChange={(e) => {
+                          const inputValue = e.target.value.replace(/^0+/, '') || '0';
+                          setSteps(parseInt(inputValue) || 0);
+                        }}
+                        value={steps === 0 ? '' : steps}
+                        placeholder="Número de passos"
+                        disabled={loading}
+                      />
                     <button onClick={registerSteps} disabled={loading || steps <= 0}>
                       {loading ? "Registrando..." : "Registrar"}
                     </button>
